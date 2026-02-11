@@ -1,0 +1,156 @@
+"""Command-line interface for piscal-processor."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from piscal_processor.converter import (
+    _pathway_subdirs_from_csv_paths,
+    convert_curves,
+    normalize_and_write_parquet,
+)
+from piscal_processor.export import export_curves
+from piscal_processor.storage import get_backend
+
+
+def _parse_convert_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Convert PISCAL CSV curve files into metadata and measurement Parquet tables."
+    )
+    parser.add_argument(
+        "input_dir",
+        type=str,
+        help="Directory containing the CSV files (one curve per file). Local path or s3a:// URI.",
+    )
+    parser.add_argument(
+        "--no-discover-pathway-subdirs",
+        action="store_true",
+        help="Do not discover subdirs; treat input_dir as the folder of CSVs.",
+    )
+    parser.add_argument(
+        "--source-pathway",
+        type=str,
+        default=None,
+        help="Explicit pathway_subtype label (e.g. C4_NAD-ME). Only with --no-discover-pathway-subdirs.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="parquet_output",
+        help="Destination directory for Parquet output.",
+    )
+    parser.add_argument(
+        "--metadata-name",
+        default="curve_metadata.parquet",
+        help="Filename for the metadata parquet output.",
+    )
+    parser.add_argument(
+        "--measurements-name",
+        default="curve_measurements.parquet",
+        help="Filename for the measurement parquet output.",
+    )
+    return parser.parse_args()
+
+
+def _parse_export_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Export measurement Parquet to CSV or TSV (optionally selected columns)."
+    )
+    parser.add_argument(
+        "measurements_parquet",
+        type=str,
+        help="Path to curve_measurements.parquet (local or s3a://).",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        required=True,
+        help="Output CSV or TSV path.",
+    )
+    parser.add_argument(
+        "--columns",
+        type=str,
+        default=None,
+        help="Comma-separated column names to export (default: all).",
+    )
+    parser.add_argument(
+        "--format",
+        type=str,
+        choices=("csv", "tsv"),
+        default="csv",
+        help="Output format: csv or tsv.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Main entry: convert CSV files to Parquet (default subcommand)."""
+    args = _parse_convert_args()
+    output_dir = Path(args.output_dir)
+
+    if args.no_discover_pathway_subdirs:
+        read_backend = get_backend(args.input_dir)
+        metadata_df, measurement_df = convert_curves(
+            args.input_dir, read_backend, source_pathway=args.source_pathway
+        )
+        normalize_and_write_parquet(
+            metadata_df,
+            measurement_df,
+            output_dir,
+            metadata_name=args.metadata_name,
+            measurements_name=args.measurements_name,
+        )
+        print(f"Wrote metadata to {output_dir / args.metadata_name}")
+        print(f"Wrote measurements to {output_dir / args.measurements_name}")
+        return
+
+    read_backend = get_backend(args.input_dir)
+    csv_paths = read_backend.list_csv_paths(args.input_dir)
+    subdirs = _pathway_subdirs_from_csv_paths(args.input_dir, csv_paths)
+    parent = args.input_dir.rstrip("/").split("/")[-1]
+
+    if not subdirs:
+        metadata_df, measurement_df = convert_curves(
+            args.input_dir, read_backend, source_pathway=None
+        )
+        normalize_and_write_parquet(
+            metadata_df,
+            measurement_df,
+            output_dir,
+            metadata_name=args.metadata_name,
+            measurements_name=args.measurements_name,
+        )
+        print(f"Wrote metadata to {output_dir / args.metadata_name}")
+        print(f"Wrote measurements to {output_dir / args.measurements_name}")
+    else:
+        for sub in subdirs:
+            input_path = f"{args.input_dir.rstrip('/')}/{sub}"
+            source_pathway = f"{parent}_{sub}"
+            sub_output = output_dir / source_pathway
+            metadata_df, measurement_df = convert_curves(
+                input_path, read_backend, source_pathway=source_pathway
+            )
+            normalize_and_write_parquet(
+                metadata_df,
+                measurement_df,
+                sub_output,
+                metadata_name=args.metadata_name,
+                measurements_name=args.measurements_name,
+            )
+            print(f"Wrote {source_pathway} to {sub_output}")
+
+
+def export_main() -> None:
+    """CLI entry for export: Parquet -> CSV/TSV."""
+    args = _parse_export_args()
+    backend = get_backend(args.measurements_parquet)
+    measurement_df = backend.read_parquet(args.measurements_parquet)
+    columns = [c.strip() for c in args.columns.split(",")] if args.columns else None
+    export_curves(
+        measurement_df,
+        args.output,
+        columns=columns,
+        format=args.format,
+    )
+    print(f"Exported to {args.output}")

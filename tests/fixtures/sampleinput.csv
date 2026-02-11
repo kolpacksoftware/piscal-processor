@@ -1,0 +1,31 @@
+Investigator name: First and last name
+Contact information: Your email / mail addresses
+Site name in full: Your site's identifier / name
+Vegetation type: Mixed forest / grasslands / croplands/ etc
+Soil type: Soil type at your site
+Major species: List of major species at the site
+Sample leaf light environment: The general light environment in which the leaf is in (e.g. heavily shaded from above)
+Water stress assessment: Indicate whether there is water stress at the time of sampling
+Instrument used: For example - Licor-6400
+Extra info: Any extra information you feel would be helpful to put the sampled leaf in context
+SiteID,Latitude(Degrees),Longitude(Degrees),Elevation,SampleYear,SampleDayOfYear,GrowSeasonStart,GrowSeasonEnd,StandAge,CanopyHeight,LeafAreaIndex,SpeciesSampled,AveTimeResolution,SampleHeight,LeafAge,SpecificLeafArea,LfNitrogenContent,LfCarbonContent,LfPhosphContent
+NoUnit,NorthPositive,EastPositive,m,NoUnit,DayOfYear,DayOfYear,DayOfYear,Year,m,m2/m2,NoBlankSpace,Minutes,m,days,cm2/g,%,%,%
+MOFLUX,38.733,-92.2,237.4,2008,174,105,270,70,17,4.2,WhiteOak,3,0.9144,69,203.72,-9999,-9999,-9999
+Gamma*,Kc,Ko,Alpha,Rd,gi
+Pa,Pa,Pa,NoUnit,umol/m2/s,umol/m2/s/Pa
+-9999,-9999,-9999,-9999,-9999,-9999
+Obs,HHMMSS,FTime,Photo,!AdjPhoto,!StomCond,!Ci,!Trmmol,!VpdL,Area,StmRat,BLCond,Tair,!Tleaf,TBlk,CO2R,CO2S,H2OR,H2OS,RH_R,RH_S,Flow,!PARi,PARo,Press,CsMch,HsMch,StableF,Status,PhiPS2,OxygenPress
+NoUnit,HHMMSS,Second,umol/m2/s,umol/m2/s,mol/m2/s,umol/mol,mmol/m2/s,kPa,cm2,NA,mol/m2/s,oC,oC,oC,umol/mol,umol/mol,mmol/mol,mmol/mol,%,%,umol/s,umol/m2/s,umol/m2/s,Kpa,umol/mol,mmol/mol,NA,NA,NA,KPA
+13,14:44:20,664.5,7.51,7.470041223,0.149,279,2.64,1.74,2,1,9.29,25.02,26.93,23.62,374.86,370.62,17.176,18.471,53.32,57.34,400.7,1201,47,98.83,2.63,0.43,0.2,111115,0.093,-9999
+19,14:46:49,813.5,5.87,5.855008277,0.155,230,2.74,1.73,2,1,9.29,25.33,26.95,24.22,302.85,299.51,17.244,18.589,52.55,56.64,400.7,1201,48,98.82,2.51,0.416,0.8,111115,0.088,-9999
+25,14:49:19,962.5,4.98,4.986692181,0.158,192,2.78,1.72,2,1,9.29,25.25,26.95,24.02,251.75,248.92,17.346,18.709,53.13,57.3,400.7,1201,43,98.82,2.54,0.408,0.5,111115,0.081,-9999
+31,14:51:48,1111.5,3.58,3.613166391,0.167,159,2.9,1.7,2,1,9.29,25.22,26.91,24.02,200.66,198.59,17.405,18.823,53.4,57.75,400.7,1200,41,98.82,2.46,0.403,0.5,111115,0.075,-9999
+37,14:54:17,1260.5,2.27,2.337349887,0.175,123,3.06,1.71,2,1,9.29,25.26,26.99,24.03,149.71,148.35,17.397,18.895,53.22,57.81,400.7,1199,43,98.82,2.34,0.393,0.5,111115,0.069,-9999
+43,14:56:46,1410.5,0.887,1.001965238,0.184,88.3,3.2,1.7,2,1,9.29,25.35,26.98,24.22,99.42,98.82,17.373,18.939,52.87,57.64,400.7,1199,44,98.82,2.28,0.383,1,111115,0.061,-9999
+49,14:59:15,1559.5,-0.542,-0.343159241,0.189,51.6,3.28,1.7,2,1,9.29,25.37,26.98,24.21,48.11,48.31,17.366,18.973,52.79,57.67,400.7,1199,45,98.82,2.14,0.376,0.8,111115,0.052,-9999
+61,15:07:44,2068.5,7.01,6.969621394,0.134,278,2.41,1.76,2,1,9.29,25.03,27.03,23.63,377.22,371.95,16.919,18.495,52.47,57.36,300.1,1199,49,98.82,2.65,0.438,0.2,111115,0.09,-9999
+68,15:11:13,2277.5,8.46,8.390629343,0.116,347,2.14,1.78,2,1,9.29,24.93,27.05,23.43,482.66,476.34,16.879,18.276,52.67,57.03,300.1,1198,47,98.81,2.74,0.458,0.8,111115,0.098,-9999
+75,15:14:42,2486.5,8.98,8.883476363,0.0729,387,1.38,1.83,2,1,9.29,24.64,27.04,23.04,607.06,600.53,16.913,17.813,53.72,56.57,300.1,1198,46,98.81,2.71,0.479,0.8,111115,0.102,-9999
+82,15:18:10,2694.5,9.64,9.509884017,0.0453,439,0.868,1.85,2,1,9.29,24.48,27.04,22.85,806.75,799.86,16.997,17.565,54.49,56.31,300.1,1198,99,98.81,2.37,0.491,0.5,111115,0.102,-9999
+89,15:21:36,2900.5,10.4,10.24385533,0.0318,454,0.609,1.85,2,1,9.29,24.13,26.92,22.16,1006.08,998.77,16.958,17.357,55.52,56.83,300.1,1198,64,98.8,1.78,0.512,0.5,111115,0.1,-9999
+96,15:25:02,3106.5,10.3,10.12230686,0.0259,533,0.501,1.86,2,1,9.29,24.11,26.98,22.26,1207.66,1200.37,16.973,17.301,55.61,56.69,300.1,1202,50,98.8,1.46,0.531,0.8,111115,0.101,-9999

@@ -1,0 +1,21 @@
+Photosynthetic pathway: C3
+Investigator name: Test
+Major species: TestSpecies
+Contact information: test@example.com
+Site name in full: Test Site
+Vegetation type: Grassland
+Soil type: Loam
+Sample leaf light environment: Sun
+Water stress assessment: None
+Instrument used: Licor
+Extra info: Fixture for tests
+SiteID,SpeciesSampled,SampleYear
+-, -, -
+site1,SpeciesA,2024
+Gamma,Kc25,Ko25,AlphaTPU,Rd25,ResistWP25,ResistCH25
+Pa,µmol,µmol,-,µmol,-,-
+42,-9999,-9999,-9999,-9999,-9999,-9999
+DataType,ObsNo,Year,DayOfYear,ObsDate,HHMMSS,!AnetCO2,!PARi,!Tleaf
+-, -, -, -, -, -, µmol,µmol,°C
+ACi,1,2024,100,2024-04-10,10:00:00,25.5,1200,28.0
+ACi,2,2024,100,2024-04-10,10:01:00,24.1,1250,28.1

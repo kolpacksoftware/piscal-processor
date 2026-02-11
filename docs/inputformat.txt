@@ -1,0 +1,88 @@
+Photosynthetic, Internal and Stomatal Conductance Analyses of Leaves (PISCAL)
+Instruction for setting up the input file for PISCAL
+-----Mentioning a brand name in this document does not constitute support for the brand-------
+
+General instruction
+- Variables with labels started with '!' must be provided in order for PISCAL to do any analysis.
+    For other variables, fill in with -9999 if unavailable. 
+- Each input file must contain only data from a single curve. Separate curves may be stored in
+    separate input data files and submitted at the same time.
+- Save data in comma separated value format (.csv)
+
+Line 1 to Line 10: Space provided for descriptive information about the investigator, 
+   contact information, the site,the sample leaf and its general environmental condition
+Line 11: Complementary data not used by PISCAL but needed for properly interpreting the A/Ci data and for synthesis
+       SiteID - (Dimensionless), Site identifier (do not leave blank between letters)
+       Latitude(Degrees) - Site latitude, northern hermisphere positive
+       Longitude(Degrees) - Site longitude, east positive
+       Elevation - (m), site elevation
+       SampleYear - (year), the year when the A/Ci data is taken
+       SampleDayOfYear - (day), the day of year (since 1 Jan) when the A/Ci data is taken
+       GrowSeasonStart - (day), the approximate start day (since 1 Jan) of growing season
+       GrowSeasonEnd - (day), the approximate end day (since 1 Jan) of growing season
+       StandAge - (year), stand age since the last disturbance
+       CanopyHeight - (m), the height of the canopy
+       LeafAreaIndex - (m2/m2), the leaf area index in the middle of growing season
+       SpeciesSampled - (dimensionless), the species of the leaf sample (don't leave blank between letters)
+       AveTimeResolution - (minutes), the average time interval between two consecutive A/Ci data points 
+       SampleHeight - (m), the height at which the leaf is located
+       LeafAge - (day), the age of the leaf
+       SpecificLeafArea - (cm2/g), specific leaf area of the sample
+       LfNitrogenContent - (%), dry leaf nitrogen content of the sample
+       LfCarbonContent - (%), dry leaf carbon content of the sample
+       LfPhosphContent - (%), dry leaf phosphorus content of the sample
+Line 12: The units of corresponding variables in Line 11
+Line 13: The values of corresponding variables in Line 11
+Line 14: The photosysnthetic model parameters you want to keep constant at the values you provide, 
+   fill in -9999 if you want to let PISCAL decide
+       Gamma* - (Pa), chloroplastic CO2 photocompensation point (must be positive if provided)
+       Kc - (Pa), Michaelis-Menten constant for RuBP carboxylation (must be positive if provided)
+       Ko - (Pa), Michaelis-Menten constant for RuBP oxygenation (must be positive if provided)
+       Alpha - (Dimensionless), the fraction of glycolate carbon not returned to the chloroplast (must be between 0~1 if provided)
+       Rd - (umol/m2/s), dark respiration (must be positive if provided)
+       gi - (umol/m2/s/Pa), internal (also known as mesophyll) conductance
+Line 15: The units of corresponding variables in Line 14
+Line 16: The values of corresponding variables in Line 14
+Line 17: A/Ci data for a variety of analyses, including photosynthesis, stomatal conductance, 
+   internal conductance, water use efficiency. At this stage, we only provide to users parameters 
+   from A/Ci curve analysis. Results from other analyses will be provided to users once they are
+   thoroughly tested. The format used here represents a typical output from a Licor-6400 except 
+   for the last two columns (PhiPS2 and OxygenPress). Most variables have the same label as those 
+   in the Licor-6400 guidebook with the same definition. Not all variables are used by PISCAL. 
+   By using this format, however, Licor-6400 users don't have to do a lot of data organization 
+   in order to use PISCAL. Users of other instruments could ignore columns that are not needed 
+   for A/Ci analyses (fill in those columns with -9999) and just provide the essential variables. 
+   Again, essential variables have labels started with '!'.
+       Obs: (dimensionless), the data point No.
+       HHMMSS - (hh:mm:ss), clock time
+       FTime - (seconds), number of seconds since file opened
+       Photo - (umol/m2/s), photosynthetic rate
+       !AdjPhoto - (umol/m2/s), adjusted photosynthetic rate (leakage corrected), must provide
+       !StomCond - (mol/m2/s), stomatal conductance, must provide
+       !Ci - (umol/mol), intercellular CO2 concentration (umol CO2 / mol moist air), must provide
+       !Trmmol - (mmol/m2/s), transpiration rate, must provide
+       !VpdL - (KPa), water vapor pressure deficit based on leaf temperature, must provide
+       Area - (cm2), leaf area
+       StmRat - (NA), estimate of the ratio of stomatal conductances of one side of the leaf to the other
+       BLCond - (mol/m2/s), total boundary layer conductance	
+       Tair - (oC), temperature in sample cell
+       !Tleaf - (oC), temperature of leaf thermocouple, must provide
+       TBlk - (oC), IRGA Block temperature
+       CO2R - (umol/mol), reference CO2 concentration
+       CO2S - (umol/mol), Sample CO2 concentration
+       H2OR - (mmol/mol), reference cell water vapor concentration
+       H2OS - (mmol/mol), sample cell water vapor concentration
+       RH_R - (%), Reference cell relative humidity
+       RH_S - (%), sample cell relative humidity
+       Flow - (umol/s), molar flow rate of air entering the leaf chamber
+       !PARi - (umol/m2/s), PAR measured by the in-chamber quantum sensor, must provide
+       PARo - (umol/m2/s), PAR measured by the external quantum sensor
+       Press - (KPa), atmospheric pressure
+       CsMch - (umol/mol), sample CO2 offset
+       HsMch - (mmol/mol), sample H2O offset
+       StableF - (NA), a stability indicator as a decimal value
+       Status -(NA), status flag
+       PhiPS2 - (NA), DeltaF/Fm, the fraction of absorbed PSII photons that are used in photochemistry
+       OxygenPress - (Pa), atmospheric O2 partial pressure
+Line 18: The units of corresponding variables in Line 17
+Line 19 and below: The actual data body of the A/Ci curve

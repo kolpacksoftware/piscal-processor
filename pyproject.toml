@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "piscal-processor"
+version = "0.1.0"
+description = "PISCAL CSV/Parquet processing: convert, export, and schema utilities for curves and measurements."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0",
+    "pyarrow>=10.0.0",
+]
+
+[project.optional-dependencies]
+s3 = ["s3fs>=2023.0.0", "fsspec>=2023.0.0"]
+dev = ["pytest>=7.0.0"]
+
+[project.scripts]
+piscal-processor = "piscal_processor.cli:main"
+piscal-processor-export = "piscal_processor.cli:export_main"
+
+[project.urls]
+Repository = "https://github.com/kolpacksoftware/piscal-processor"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

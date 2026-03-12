@@ -90,8 +90,6 @@ NUMERIC_METADATA_COLUMNS = [
     "CanopyHeight",
     "LeafAreaIndex",
     "SampleHeight",
-    "SampleLighting",
-    "SampleCondition",
     "LeafAge",
     "SpecificLeafArea",
     "LfNitrogenContent",
@@ -139,11 +137,15 @@ MEASUREMENT_STRING_COLUMNS = [
 
 # Map alternate CSV header names to standard metadata column names
 METADATA_COLUMN_ALIASES: Dict[str, str] = {
+    # Site / metadata header variants
     "Latitude(Degrees)": "Latitude",
     "Longitude(Degrees)": "Longitude",
     '"Extra info': "Extra info",
     '"Sample leaf light environment': "Sample leaf light environment",
     '"Water stress assessment': "Water stress assessment",
+    # Legacy Leafweb / PISCAL names mapped to updated canonical names
+    "LfPhosphContent": "LfPhosphorusContent",
+    # Parameter triplet: legacy vs updated Leafweb names
     "param_Gamma*25": "param_Gamma",
     "param_KC25": "param_Kc25",
     "param_KO25": "param_Ko25",
@@ -211,9 +213,11 @@ STANDARD_MEASUREMENT_COLUMNS = [
 
 # Map alternate CSV measurement column names to standard
 MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
+    # Required Leafweb input variables (legacy \"!\" headers and canonical forms)
     "!AnetCO2": "AnetCO2",
     "!StomCond": "StomCond",
     "!CO2i": "CO2i",
+    "!Ci": "CO2i",
     "!Trmmol": "Trmmol",
     "!VpdL": "VpdL",
     "!Tleaf": "Tleaf",
@@ -221,8 +225,13 @@ MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
     "!AirPress": "AirPress",
     "!FoorFs'": "FoOrFsp",
     "!FmorFm'": "FmOrFmp",
+    # PAM fluorometry variants
     "PAMFo'": "PAMFop",
+    # Gas exchange / VOC variants
     "AnetVoc": "AnetVOC",
     "OxygenLevel%": "OxygenLevel",
     "VOCS": "VOCS_reading",
+    # Control / timing and instrument header variants
+    "Obs": "ObsNo",
+    "Flow": "MainFlowRate",
 }

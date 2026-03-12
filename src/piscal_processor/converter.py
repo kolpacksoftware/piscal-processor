@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
@@ -25,7 +26,50 @@ from piscal_processor.schema import (
 )
 from piscal_processor.storage import StorageBackend, get_backend
 
+
+LOG = logging.getLogger(__name__)
+
 OPTIONAL_MEASUREMENT_COLUMNS = ["BLCond"]
+
+
+REQUIRED_MEASUREMENT_COLUMNS = [
+    # Gas exchange required variables (Leafweb \"!\" inputs)
+    "AnetCO2",
+    "StomCond",
+    "CO2i",
+    "Trmmol",
+    "VpdL",
+    "Tleaf",
+    "PARi",
+    "AirPress",
+]
+
+
+def _validate_required_measurement_columns(measurements_df: pd.DataFrame) -> None:
+    """
+    Emit warnings when required Leafweb measurement variables are missing or empty.
+
+    This helper is intentionally non-fatal: it logs a warning but does not raise,
+    so callers still receive DataFrames/Parquet outputs even when required inputs
+    for Leafweb analyses are incomplete.
+    """
+    if measurements_df is None or measurements_df.empty:
+        return
+
+    missing_or_empty: List[str] = []
+    for col in REQUIRED_MEASUREMENT_COLUMNS:
+        if col not in measurements_df.columns:
+            missing_or_empty.append(col)
+            continue
+        series = measurements_df[col]
+        if series.isna().all():
+            missing_or_empty.append(col)
+
+    if missing_or_empty:
+        LOG.warning(
+            "Leafweb required measurement columns are missing or empty for one or more curves: %s",
+            ", ".join(sorted(missing_or_empty)),
+        )
 
 
 def _pathway_subdirs_from_csv_paths(input_dir: str, csv_paths: List[str]) -> List[str]:
@@ -127,6 +171,8 @@ def parse_curve_file(uri: str, backend: StorageBackend) -> Tuple[Dict[str, objec
     for col in OPTIONAL_MEASUREMENT_COLUMNS:
         if col not in measurements_df.columns:
             measurements_df[col] = pd.NA
+
+    _validate_required_measurement_columns(measurements_df)
 
     metadata_row: Dict[str, object] = {
         "curve_id": backend.stem(uri),

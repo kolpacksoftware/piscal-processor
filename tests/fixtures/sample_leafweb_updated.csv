@@ -1,0 +1,22 @@
+Photosynthetic pathway: C3
+Investigator name: Leafweb Tester
+Major species: SampleSpecies
+Contact information: tester@example.com
+Site name in full: Sample Site
+Vegetation type: Forest
+Soil type: Loam
+Sample leaf light environment: Sunlit
+Water stress assessment: Well-hydrated
+Instrument used: LI-COR
+Extra info: Leafweb-style header names
+SiteID,SiteEnvironment,Latitude(Degrees),Longitude(Degrees),Elevation,SampleYear,SampleDayOfYear,GrowSeasonStart,GrowSeasonEnd,StandAge,CanopyHeight,LeafAreaIndex,SpeciesSampled,SampleHeight,SampleLighting,SampleCondition,LeafAge,SpecificLeafArea,LfNitrogenContent,LfCarbonContent,LfPhosphorusContent,WoodPorosity,Sapwooddensity,LeafLength,LeafWidth
+NA,NA,deg,deg,m,year,day,day,day,year,m,m2m-2,NA,m,NA,NA,days,cm2g-1,%,%,%,NA,gcm-3,cm,cm
+site_leafweb,Nature,35.0,-82.0,500,2024,120,90,260,10,15,3.0,SpeciesLW,2.0,Sunlit,Well-hydrated,30,15.0,2.5,48.0,0.2,ring porous,0.45,5.0,2.0
+Gamma*25,KC25,KO25,AlphaTPU,Rd25,Resistwpbs25,Resistchm25
+Pa,Pa,Pa,NA,µmolm-2s-1,µmol-1m2sPa,µmol-1m2sPa
+42,-9999,-9999,-9999,-9999,-9999,-9999
+DataType,ObsNo,ObsDate,HHMMSS,!AnetCO2,AnetO2,AnetVOC,!StomCond,!CO2i,!Trmmol,!VpdL,LeafAreaMeasured,StmRat,BLCond,Tair,!Tleaf,TBlk,CO2R,CO2S,H2OR,H2OS,RH_R,RH_S,MainFlowRate,!PARi,PARo,!AirPress,OxygenLevel%,TissueArea,TissueMass,PARi@Fs,!FoorFs',!FmorFm',FoDark,FmDark,PamFo',VOCR,VOCS
+NA,NA,NA,NA,µmolm-2s-1,µmolm-2s-1,nmolm-2s-1,molm-2s-1,µmolmol-1,mmolm-2s-1,kPa,cm2,NA,molm-2s-1,oC,oC,oC,µmolmol-1,µmolmol-1,mmolmol-1,mmolmol-1,%,%,µmols-1,µmolm-2s-1,µmolm-2s-1,kPA,%,cm2,g,µmolm-2s-1,arb,arb,arb,arb,arb,ppb,ppb
+11,1,04-30-2024,10:00:00,25.5,10.1,0.5,0.3,300,5.0,1.2,6.0,1.0,1.5,22.0,25.0,21.0,400,380,10.0,9.5,60,58,500,1200,1250,101.3,21.0,0.0,0.0,1180,200,800,180,820,150,5,4
+11,2,04-30-2024,10:02:00,24.0,9.8,0.4,0.32,295,4.8,1.1,6.0,1.0,1.5,22.1,25.2,21.1,400,380,10.1,9.6,61,59,500,1190,1240,101.3,21.0,0.0,0.0,1185,205,805,180,820,150,5,4
+

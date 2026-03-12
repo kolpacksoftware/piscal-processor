@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "piscal-processor"
-version = "0.1.0"
+version = "0.1.1"
 description = "PISCAL CSV/Parquet processing: convert, export, and schema utilities for curves and measurements."
 readme = "README.md"
 requires-python = ">=3.10"

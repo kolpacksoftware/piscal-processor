@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from piscal_processor.converter import (
@@ -12,6 +13,7 @@ from piscal_processor.converter import (
 )
 from piscal_processor.export import export_curves
 from piscal_processor.storage import get_backend
+from piscal_processor.validation import validate_piscal_csv
 
 
 def _parse_convert_args() -> argparse.Namespace:
@@ -80,6 +82,23 @@ def _parse_export_args() -> argparse.Namespace:
         choices=("csv", "tsv"),
         default="csv",
         help="Output format: csv or tsv.",
+    )
+    return parser.parse_args()
+
+
+def _parse_check_format_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Check whether one or more CSV files are in PISCAL/Leafweb format."
+    )
+    parser.add_argument(
+        "files",
+        nargs="+",
+        help="One or more CSV files to validate.",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Enable strict validation (reserved for future tightening of rules).",
     )
     return parser.parse_args()
 
@@ -154,3 +173,20 @@ def export_main() -> None:
         format=args.format,
     )
     print(f"Exported to {args.output}")
+
+
+def check_format_main() -> None:
+    """CLI entry for format validation of PISCAL CSV files."""
+    args = _parse_check_format_args()
+    any_failed = False
+
+    for path in args.files:
+        ok, errors = validate_piscal_csv(path, strict=args.strict)
+        if ok:
+            print(f"{path}: OK")
+        else:
+            any_failed = True
+            reason = "; ".join(errors) if errors else "Unknown validation error"
+            print(f"{path}: NOT PISCAL - {reason}")
+
+    sys.exit(1 if any_failed else 0)

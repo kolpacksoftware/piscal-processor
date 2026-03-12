@@ -27,6 +27,7 @@ from piscal_processor.schema import (
     STANDARD_METADATA_COLUMNS,
 )
 from piscal_processor.storage import FilesystemBackend, S3Backend, StorageBackend, get_backend
+from piscal_processor.validation import is_piscal_csv, validate_piscal_csv
 
 __all__ = [
     "convert_curves",
@@ -48,4 +49,6 @@ __all__ = [
     "METADATA_COLUMN_ALIASES",
     "MEASUREMENT_STRING_COLUMNS",
     "NUMERIC_METADATA_COLUMNS",
+    "is_piscal_csv",
+    "validate_piscal_csv",
 ]

@@ -26,3 +26,8 @@
 - Each file contains exactly one curve, so we key by filename.
 - The observation block mixes integer and float columns; we coerce numeric columns opportunistically based on actual data, while keeping categorical fields such as `SiteEnvironment`, `SampleLighting`, and `SampleCondition` as strings.
 - Instrument-specific legacy fields that have no Leafweb equivalent (e.g. `AveTimeResolution`, `gi`, `FTime`, `CsMch`, `HsMch`, `StableF`, `Status`) are ignored on ingest and not included in the standard Parquet schema.
+
+The `piscal-processor` library includes a lightweight validator (`is_piscal_csv` /
+`validate_piscal_csv`) that uses this structure as its reference when deciding if a
+CSV file appears to be in PISCAL/Leafweb format. Both legacy PISCAL headers and
+Leafweb-standard headers are accepted.

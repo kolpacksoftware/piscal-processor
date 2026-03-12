@@ -50,10 +50,21 @@ Options: `--no-discover-pathway-subdirs`, `--source-pathway`, `--metadata-name`,
 piscal-processor-export curve_measurements.parquet -o out.tsv --format tsv --columns curve_id,AnetCO2,PARi
 ```
 
+**Validate** that one or more CSV files are in PISCAL format:
+
+```bash
+piscal-processor-check-format tests/fixtures/sampleinput.csv
+```
+
 ## Library
 
 ```python
-from piscal_processor import convert_curves, export_curves, get_backend
+from piscal_processor import (
+    convert_curves,
+    export_curves,
+    get_backend,
+    is_piscal_csv,
+)
 
 # Convert CSVs to DataFrames (or write Parquet via converter.normalize_and_write_parquet)
 backend = get_backend("/path/to/csv_dir")
@@ -61,6 +72,10 @@ meta_df, meas_df = convert_curves("/path/to/csv_dir", backend, source_pathway="C
 
 # Export measurements to CSV/TSV
 export_curves(meas_df, "out.tsv", columns=["curve_id", "AnetCO2", "PARi"], format="tsv")
+
+# Quickly validate that a single CSV file looks like a PISCAL/Leafweb curve file
+ok = is_piscal_csv("/path/to/file.csv")
+print(ok)
 ```
 
 Schema constants and parser helpers are also available:

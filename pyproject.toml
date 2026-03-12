@@ -20,6 +20,7 @@ dev = ["pytest>=7.0.0"]
 [project.scripts]
 piscal-processor = "piscal_processor.cli:main"
 piscal-processor-export = "piscal_processor.cli:export_main"
+piscal-processor-check-format = "piscal_processor.cli:check_format_main"
 
 [project.urls]
 Repository = "https://github.com/kolpacksoftware/piscal-processor"

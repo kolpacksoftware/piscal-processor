@@ -99,12 +99,18 @@ def pad_row(row: List[str], target_len: int) -> List[str]:
 def coerce_numeric_columns(df: pd.DataFrame, skip: set[str] | None = None) -> pd.DataFrame:
     """Convert string columns to numeric when they contain numeric data."""
     skip = skip or set()
-    for column in df.columns:
+    # Iterate by position so duplicate column names still yield a Series (df[name] can be DataFrame).
+    for j in range(df.shape[1]):
+        column = df.columns[j]
         if column in skip:
             continue
-        numeric = pd.to_numeric(df[column], errors="coerce")
+        series = df.iloc[:, j]
+        if not isinstance(series, pd.Series):
+            continue
+        numeric = pd.to_numeric(series, errors="coerce")
         if numeric.notna().any():
-            df[column] = numeric
+            # Use isetitem so pandas can replace column dtype (Arrow string -> numeric).
+            df.isetitem(j, numeric)
     return df
 
 

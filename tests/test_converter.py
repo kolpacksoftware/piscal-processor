@@ -161,3 +161,58 @@ def test_validate_required_columns_logs_warning_when_missing(caplog, tmp_path):
 
     messages = " ".join(record.getMessage() for record in caplog.records)
     assert "Leafweb required measurement columns are missing or empty for one or more curves" in messages
+
+
+def _write_leafweb_fixture_with_air_header(tmp_path: Path, air_header: str) -> Path:
+    """Create a leafweb-like fixture with a configurable air pressure header."""
+    fixtures = Path(__file__).parent / "fixtures"
+    source_path = fixtures / "sample_leafweb_updated.csv"
+    if not source_path.exists():
+        pytest.skip("fixture sample_leafweb_updated.csv not found")
+
+    contents = source_path.read_text(encoding="utf-8")
+    contents = contents.replace("!AirPress", air_header)
+
+    out_path = tmp_path / f"leafweb_{air_header.replace('!', '').lower()}.csv"
+    out_path.write_text(contents, encoding="utf-8")
+    return out_path
+
+
+def test_required_airpress_not_missing_when_airpres_alias_present(caplog, tmp_path):
+    """AirPres should normalize to AirPress before required-column validation."""
+    csv_path = _write_leafweb_fixture_with_air_header(tmp_path, "AirPres")
+    backend = FilesystemBackend()
+
+    with caplog.at_level("WARNING"):
+        _meta, meas = parse_curve_file(str(csv_path), backend)
+
+    assert "AirPress" in meas.columns
+    messages = " ".join(record.getMessage() for record in caplog.records)
+    assert "Leafweb required measurement columns are missing or empty" not in messages
+
+
+def test_required_airpress_not_missing_when_patm_alias_present(caplog, tmp_path):
+    """Patm should normalize to AirPress before required-column validation."""
+    csv_path = _write_leafweb_fixture_with_air_header(tmp_path, "Patm")
+    backend = FilesystemBackend()
+
+    with caplog.at_level("WARNING"):
+        _meta, meas = parse_curve_file(str(csv_path), backend)
+
+    assert "AirPress" in meas.columns
+    messages = " ".join(record.getMessage() for record in caplog.records)
+    assert "Leafweb required measurement columns are missing or empty" not in messages
+
+
+def test_required_airpress_warning_when_all_airpress_aliases_absent(caplog, tmp_path):
+    """Warning should remain when AirPress and all aliases are absent."""
+    csv_path = _write_leafweb_fixture_with_air_header(tmp_path, "AirPressureX")
+    backend = FilesystemBackend()
+
+    with caplog.at_level("WARNING"):
+        _meta, meas = parse_curve_file(str(csv_path), backend)
+
+    assert "AirPress" not in meas.columns
+    messages = " ".join(record.getMessage() for record in caplog.records)
+    assert "Leafweb required measurement columns are missing or empty for one or more curves" in messages
+    assert "AirPress" in messages

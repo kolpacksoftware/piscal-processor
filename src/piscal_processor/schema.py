@@ -223,6 +223,8 @@ MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
     "!Tleaf": "Tleaf",
     "!PARi": "PARi",
     "!AirPress": "AirPress",
+    "AirPres": "AirPress",
+    "Patm": "AirPress",
     "!FoorFs'": "FoOrFsp",
     "!FmorFm'": "FmOrFmp",
     # PAM fluorometry variants

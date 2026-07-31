@@ -29,6 +29,37 @@ def test_parse_curve_file_fixture():
     assert len(meas) >= 1
 
 
+def test_two_headers_aliasing_to_one_column_keep_the_first(tmp_path):
+    """MEASUREMENT_COLUMN_ALIASES maps several spellings onto one standard column.
+
+    A file carrying two of them (here AirPres and Patm, both AirPress) would otherwise
+    produce duplicate labels and break the reindex onto the standard schema.
+    """
+    fixtures = Path(__file__).parent / "fixtures"
+    source = fixtures / "sample_leafweb_updated.csv"
+    if not source.exists():
+        pytest.skip("fixture sample_leafweb_updated.csv not found")
+
+    lines = source.read_text(encoding="utf-8").splitlines()
+    header_idx = next(i for i, line in enumerate(lines) if line.startswith("DataType,"))
+    headers = lines[header_idx].split(",")
+    headers[headers.index("!AirPress")] = "AirPres"
+    lines[header_idx] = ",".join(headers) + ",Patm"
+    lines[header_idx + 1] += ",kPa"
+    for row in range(header_idx + 2, len(lines)):
+        if lines[row].strip():
+            lines[row] += ",99.9"
+
+    collided = tmp_path / "aliased.csv"
+    collided.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    _, measurements = parse_curve_file(str(collided), FilesystemBackend())
+
+    assert list(measurements.columns).count("AirPress") == 1
+    # The first spelling in the header wins; the fixture's own value is 101.3.
+    assert measurements["AirPress"].iloc[0] == 101.3
+
+
 def test_parse_curve_file_sampleinput_leafweb():
     """Parse leafweb.org-style sample input (different header names, site/param triplets)."""
     fixtures = Path(__file__).parent / "fixtures"

@@ -6,7 +6,9 @@ Use as a library:
   meta, meas = convert_curves(input_dir, get_backend(input_dir))
   export_curves(meas, "out.tsv", columns=["curve_id", "AnetCO2"], format="tsv")
 
-CLI: piscal-processor (convert), piscal-processor-export (export to CSV/TSV).
+CLI: piscal-processor (convert), piscal-processor-export (export to CSV/TSV),
+piscal-processor-check-format (validate CSV format),
+piscal-processor-parse-file (parse one CSV to JSON).
 """
 
 from piscal_processor.converter import convert_curves, parse_curve_file, parse_curve_file_json
@@ -22,9 +24,11 @@ from piscal_processor.schema import (
     MEASUREMENT_COLUMN_ALIASES,
     MEASUREMENT_STRING_COLUMNS,
     METADATA_COLUMN_ALIASES,
+    NUMERIC_MEASUREMENT_COLUMNS,
     NUMERIC_METADATA_COLUMNS,
     STANDARD_MEASUREMENT_COLUMNS,
     STANDARD_METADATA_COLUMNS,
+    STRING_METADATA_COLUMNS,
 )
 from piscal_processor.storage import FilesystemBackend, S3Backend, StorageBackend, get_backend
 from piscal_processor.validation import is_piscal_csv, validate_piscal_csv
@@ -49,7 +53,9 @@ __all__ = [
     "MEASUREMENT_COLUMN_ALIASES",
     "METADATA_COLUMN_ALIASES",
     "MEASUREMENT_STRING_COLUMNS",
+    "NUMERIC_MEASUREMENT_COLUMNS",
     "NUMERIC_METADATA_COLUMNS",
+    "STRING_METADATA_COLUMNS",
     "is_piscal_csv",
     "validate_piscal_csv",
 ]

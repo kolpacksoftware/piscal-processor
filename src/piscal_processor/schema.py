@@ -95,7 +95,8 @@ NUMERIC_METADATA_COLUMNS = [
     "LfNitrogenContent",
     "LfCarbonContent",
     "LfPhosphorusContent",
-    "WoodPorosity",
+    # WoodPorosity is deliberately absent: it is categorical ("ring porous",
+    # "diffuse porous"), so coercing it to a number discards the value.
     "Sapwooddensity",
     "LeafLength",
     "LeafWidth",
@@ -121,6 +122,12 @@ NUMERIC_METADATA_COLUMNS = [
     "param_Rd25",
     "param_ResistWP25",
     "param_ResistCH25",
+]
+
+# Every metadata column that is not numeric is emitted as a string, so each column
+# has exactly one declared type regardless of what a given file happens to contain.
+STRING_METADATA_COLUMNS = [
+    col for col in STANDARD_METADATA_COLUMNS if col not in set(NUMERIC_METADATA_COLUMNS)
 ]
 
 # Measurement columns to coerce to pandas StringDtype for consistent Parquet schema
@@ -237,3 +244,10 @@ MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
     "Obs": "ObsNo",
     "Flow": "MainFlowRate",
 }
+
+# Measurement columns carrying numbers. Emitted as float64 rather than letting pandas
+# pick int64 or float64 per batch, which otherwise makes a column's type depend on
+# which files were converted together (Spark: INT32 vs double).
+NUMERIC_MEASUREMENT_COLUMNS = [
+    col for col in STANDARD_MEASUREMENT_COLUMNS if col not in set(MEASUREMENT_STRING_COLUMNS)
+]

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 
@@ -20,9 +21,11 @@ from piscal_processor.schema import (
     MEASUREMENT_COLUMN_ALIASES,
     MEASUREMENT_STRING_COLUMNS,
     METADATA_COLUMN_ALIASES,
+    NUMERIC_MEASUREMENT_COLUMNS,
     NUMERIC_METADATA_COLUMNS,
     STANDARD_MEASUREMENT_COLUMNS,
     STANDARD_METADATA_COLUMNS,
+    STRING_METADATA_COLUMNS,
 )
 from piscal_processor.storage import StorageBackend, get_backend
 
@@ -153,6 +156,11 @@ def parse_curve_file(uri: str, backend: StorageBackend) -> Tuple[Dict[str, objec
     measurements_df = measurements_df.rename(
         columns={k: v for k, v in MEASUREMENT_COLUMN_ALIASES.items() if k in measurements_df.columns}
     )
+    # Duplicate labels break the later reindex onto the standard schema. They arise from
+    # trailing commas in the header row (several unnamed columns) and from two source
+    # spellings aliasing onto one standard column. Keep the first, as the metadata path does.
+    if measurements_df.columns.duplicated().any():
+        measurements_df = measurements_df.loc[:, ~measurements_df.columns.duplicated(keep="first")]
     measurements_df.insert(0, "curve_id", backend.stem(uri))
 
     insert_idx = 1
@@ -209,10 +217,31 @@ def _json_safe_scalar(value: object) -> Any:
     # numpy / pandas scalars -> plain Python
     if hasattr(value, "item"):
         try:
-            return value.item()
+            value = value.item()
         except (ValueError, AttributeError):
             pass
+    # inf/-inf have no JSON representation; treat them as missing like NaN.
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
     return value
+
+
+def _json_safe_text(value: object) -> Any:
+    """Render a value as a string, preserving None."""
+    scalar = _json_safe_scalar(value)
+    return None if scalar is None else str(scalar)
+
+
+def _json_safe_float(value: object) -> Any:
+    """Coerce a value to float, or None when it is missing or not a number."""
+    scalar = _json_safe_scalar(value)
+    if scalar is None:
+        return None
+    try:
+        number = float(scalar)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
 
 
 def parse_curve_file_json(
@@ -223,8 +252,12 @@ def parse_curve_file_json(
 ) -> dict:
     """Parse one PISCAL CSV into a JSON-safe {"metadata": {...}, "measurements": [...]} dict.
 
-    Applies METADATA_COLUMN_ALIASES and reindexes to STANDARD_* columns (the same
-    normalization the Parquet path performs), then replaces NaN/NA/NaT with None.
+    Applies METADATA_COLUMN_ALIASES, reindexes to STANDARD_* columns, and replaces
+    NaN/NA/NaT/inf with None.
+
+    Every column is emitted with its schema-declared type, so a field's JSON type
+    never depends on which file it came from: numeric columns are floats and string
+    columns are strings, matching the dtypes the Parquet path writes.
     """
     metadata_row, measurements_df = parse_curve_file(uri, backend)
 
@@ -241,17 +274,36 @@ def parse_curve_file_json(
         measurements_df = measurements_df.copy()
         measurements_df["pathway_subtype"] = source_pathway
 
-    metadata: Dict[str, Any] = {
-        col: _json_safe_scalar(metadata_row.get(col)) for col in STANDARD_METADATA_COLUMNS
-    }
+    numeric_metadata = set(NUMERIC_METADATA_COLUMNS)
+    metadata: Dict[str, Any] = {}
+    unparsed: List[str] = []
+    for col in STANDARD_METADATA_COLUMNS:
+        raw = metadata_row.get(col)
+        if col not in numeric_metadata:
+            metadata[col] = _json_safe_text(raw)
+            continue
+        metadata[col] = _json_safe_float(raw)
+        if metadata[col] is None and _json_safe_scalar(raw) is not None:
+            unparsed.append(f"{col}={raw!r}")
+    if unparsed:
+        LOG.warning(
+            "Dropped non-numeric values from numeric metadata columns in %s: %s",
+            uri,
+            ", ".join(unparsed),
+        )
 
     measurements_df = measurements_df.reindex(columns=STANDARD_MEASUREMENT_COLUMNS)
     # Replace missing with None for JSON serialization.
     records = measurements_df.astype(object).where(pd.notnull(measurements_df), None).to_dict(
         orient="records"
     )
+    string_measurements = set(MEASUREMENT_STRING_COLUMNS)
     measurements: List[Dict[str, Any]] = [
-        {k: _json_safe_scalar(v) for k, v in row.items()} for row in records
+        {
+            k: (_json_safe_text(v) if k in string_measurements else _json_safe_float(v))
+            for k, v in row.items()
+        }
+        for row in records
     ]
 
     return {"metadata": metadata, "measurements": measurements}
@@ -301,6 +353,11 @@ def convert_curves(
     return metadata_df, measurement_df
 
 
+def _as_string(series: pd.Series) -> pd.Series:
+    """Render a column as pandas StringDtype, preserving missing values."""
+    return series.apply(lambda x: pd.NA if pd.isna(x) else str(x)).astype("string")
+
+
 def normalize_and_write_parquet(
     metadata_df: pd.DataFrame,
     measurement_df: pd.DataFrame,
@@ -323,16 +380,23 @@ def normalize_and_write_parquet(
         metadata_df = metadata_df.loc[:, ~metadata_df.columns.duplicated(keep="first")]
     metadata_df = metadata_df.reindex(columns=STANDARD_METADATA_COLUMNS)
 
-    for col in metadata_df.select_dtypes(include=["object", "string"]).columns:
-        metadata_df[col] = metadata_df[col].apply(lambda x: pd.NA if pd.isna(x) else str(x))
+    # Pin every column to its schema-declared dtype so the written schema depends on
+    # the schema alone, not on which files happened to be converted together.
+    for col in STRING_METADATA_COLUMNS:
+        if col in metadata_df.columns:
+            metadata_df[col] = _as_string(metadata_df[col])
     for col in NUMERIC_METADATA_COLUMNS:
         if col in metadata_df.columns:
             metadata_df[col] = pd.to_numeric(metadata_df[col], errors="coerce").astype("float64")
 
     for col in MEASUREMENT_STRING_COLUMNS:
         if col in measurement_df.columns:
-            s = measurement_df[col]
-            measurement_df[col] = s.apply(lambda x: pd.NA if pd.isna(x) else str(x)).astype("string")
+            measurement_df[col] = _as_string(measurement_df[col])
+    for col in NUMERIC_MEASUREMENT_COLUMNS:
+        if col in measurement_df.columns:
+            measurement_df[col] = pd.to_numeric(
+                measurement_df[col], errors="coerce"
+            ).astype("float64")
 
     write_backend.write_parquet(metadata_df, metadata_path)
     write_backend.write_parquet(measurement_df, measurement_path)

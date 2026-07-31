@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import csv
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Missing value indicators used in PISCAL format
-MISSING_TOKENS = {"", "NA"}
+MISSING_TOKENS = {"", "NA", "N/A", "NONE", "NULL"}
 
 
 def parse_csv_line(line: str) -> List[str]:
@@ -60,7 +60,8 @@ def normalize_scalar(value: str):
     Returns:
         None for missing values, int/float for numeric strings, or the original string.
     """
-    text = value.strip()
+    # Some exports pad fixed-width fields with NUL bytes rather than spaces.
+    text = value.replace("\x00", "").strip()
     if not text:
         return None
     if text.upper() in MISSING_TOKENS:
@@ -76,7 +77,7 @@ def normalize_scalar(value: str):
         return text
 
 
-def parse_key_value_section(lines: List[str]) -> Tuple[int, Dict[str, str]]:
+def parse_key_value_section(lines: List[str]) -> Tuple[int, Dict[str, Optional[str]]]:
     """
     Parse the descriptive header section (lines 1-11) containing key-value pairs.
 
@@ -88,11 +89,12 @@ def parse_key_value_section(lines: List[str]) -> Tuple[int, Dict[str, str]]:
         lines: List of all lines from the CSV file.
 
     Returns:
-        Tuple of (next_line_index, dictionary_of_parsed_key_value_pairs).
-        The index points to the line where parsing stopped (the "SiteID" line).
+        Tuple of (next_line_index, dictionary_of_parsed_key_value_pairs). Values that
+        are only a missing-value marker are stored as None. The index points to the
+        line where parsing stopped (the "SiteID" line).
     """
     idx = 0
-    info: Dict[str, str] = {}
+    info: Dict[str, Optional[str]] = {}
     while idx < len(lines):
         line = lines[idx]
         stripped = line.strip()
@@ -101,11 +103,17 @@ def parse_key_value_section(lines: List[str]) -> Tuple[int, Dict[str, str]]:
             continue
         if stripped.startswith("SiteID"):
             break
-        if ":" in line:
-            key, value = line.split(":", 1)
-            # Strip whitespace and trailing commas (common CSV artifact)
-            cleaned_value = value.strip().rstrip(",").strip()
-            info[key.strip()] = cleaned_value
+        if stripped.startswith('"'):
+            # The whole line is one CSV-quoted field because the value contains
+            # commas; without this both the key and the value keep a stray quote.
+            fields = parse_csv_line(stripped)
+            if fields:
+                stripped = fields[0]
+        if ":" in stripped:
+            key, value = stripped.split(":", 1)
+            # Strip whitespace, NUL padding, and trailing commas (common CSV artifacts)
+            cleaned_value = value.replace("\x00", "").strip().rstrip(",").strip()
+            info[key.strip()] = None if cleaned_value.upper() in MISSING_TOKENS else cleaned_value
         idx += 1
     return idx, info
 

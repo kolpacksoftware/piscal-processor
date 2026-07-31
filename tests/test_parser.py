@@ -46,6 +46,18 @@ def test_normalize_scalar_na():
     assert normalize_scalar("na") is None
 
 
+@pytest.mark.parametrize("token", ["N/A", "n/a", "None", "NULL", "null"])
+def test_normalize_scalar_other_missing_spellings(token):
+    """Spellings observed in the real Leafweb corpus alongside plain NA."""
+    assert normalize_scalar(token) is None
+
+
+def test_normalize_scalar_strips_nul_padding():
+    """Some exports pad fixed-width fields with NUL bytes instead of spaces."""
+    assert normalize_scalar("\x00\x00\x00\x00") is None
+    assert normalize_scalar("2008\x00\x00") == 2008
+
+
 def test_normalize_scalar_missing():
     assert normalize_scalar("-9999") is None
     assert normalize_scalar("-9999.0") is None
@@ -74,6 +86,32 @@ def test_parse_key_value_section():
     assert idx == 3
     assert info["Key1"] == "value1"
     assert info["Key2"] == "value2"
+
+
+def test_parse_key_value_section_missing_and_nul_padded_values():
+    lines = [
+        "Water stress assessment: Leaf Water Content(%):\x00\x00\x00\x00",
+        "Instrument used: NA",
+        "Soil type: N/A",
+        "Vegetation type: Forest",
+        "SiteID,Other",
+    ]
+    _, info = parse_key_value_section(lines)
+    # The label survives, but the NUL padding standing in for the missing number does not.
+    assert info["Water stress assessment"] == "Leaf Water Content(%):"
+    assert info["Instrument used"] is None
+    assert info["Soil type"] is None
+    assert info["Vegetation type"] == "Forest"
+
+
+def test_parse_key_value_section_csv_quoted_line():
+    """A value containing commas makes the exporter quote the whole line."""
+    lines = [
+        '"Site name in full: Central Grasslands REC, North Dakota"',
+        "SiteID,Other",
+    ]
+    _, info = parse_key_value_section(lines)
+    assert info["Site name in full"] == "Central Grasslands REC, North Dakota"
 
 
 def test_parse_triplet():

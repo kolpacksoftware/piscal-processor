@@ -230,14 +230,14 @@ def parse_file_main() -> None:
         result = parse_curve_file_json(
             args.file, backend, source_pathway=args.source_pathway
         )
+        # Serialize fully before writing so a failure cannot emit a truncated document.
+        payload = json.dumps(result, allow_nan=False)
     except Exception as exc:  # noqa: BLE001 - surface any parse failure to the caller
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
-            json.dump(result, f, allow_nan=False)
-            f.write("\n")
+            f.write(payload + "\n")
     else:
-        json.dump(result, sys.stdout, allow_nan=False)
-        sys.stdout.write("\n")
+        sys.stdout.write(payload + "\n")

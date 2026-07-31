@@ -64,6 +64,17 @@ piscal-processor-parse-file tests/fixtures/sampleinput.csv --source-pathway C3_p
 piscal-processor-parse-file tests/fixtures/sampleinput.csv -o out.json
 ```
 
+**Rewrite to legacy Licor layout** (the positional CSV the Fortran binary reads):
+
+```bash
+piscal-processor-to-legacy tests/fixtures/sample_standard_4rows.csv -o legacy.csv
+
+# Sources already in legacy layout are copied through unchanged; --force
+# rebuilds them instead. Columns with no slot in the legacy schema are dropped
+# and reported as notes.
+piscal-processor-to-legacy tests/fixtures/sampleinput.csv -o rebuilt.csv --force
+```
+
 ## Library
 
 ```python
@@ -73,6 +84,7 @@ from piscal_processor import (
     get_backend,
     is_piscal_csv,
     parse_curve_file_json,
+    write_legacy_input,
 )
 
 # Convert CSVs to DataFrames (or write Parquet via converter.normalize_and_write_parquet)
@@ -90,6 +102,9 @@ print(ok)
 result = parse_curve_file_json(
     "/path/to/file.csv", get_backend("/path/to/file.csv"), source_pathway="C3"
 )
+
+# Rewrite Leafweb-standard CSV into the Fortran Licor layout
+write_legacy_input("/path/to/standard.csv", "/path/to/legacy.csv")
 ```
 
 Schema constants and parser helpers are also available:
@@ -110,3 +125,4 @@ pytest
 
 - `docs/csv_structure.md`: CSV file structure (header, site/parameter blocks, measurement table).
 - `docs/inputformat.txt`: PISCAL input file specification (official format description).
+- `docs/legacy_format.md`: Legacy Licor layout emitted for the Fortran binary.

@@ -154,8 +154,14 @@ METADATA_COLUMN_ALIASES: Dict[str, str] = {
     "LfPhosphContent": "LfPhosphorusContent",
     # Parameter triplet: legacy vs updated Leafweb names
     "param_Gamma*25": "param_Gamma",
+    "param_Gamma*": "param_Gamma",
     "param_KC25": "param_Kc25",
+    "param_Kc": "param_Kc25",
     "param_KO25": "param_Ko25",
+    "param_Ko": "param_Ko25",
+    "param_Alpha": "param_AlphaTPU",
+    "param_Rd": "param_Rd25",
+    "param_gi": "param_ResistWP25",
     "param_Resistwpbs25": "param_ResistWP25",
     "param_Resistchm25": "param_ResistCH25",
 }
@@ -222,6 +228,8 @@ STANDARD_MEASUREMENT_COLUMNS = [
 MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
     # Required Leafweb input variables (legacy \"!\" headers and canonical forms)
     "!AnetCO2": "AnetCO2",
+    "!AdjPhoto": "AnetCO2",
+    "AdjPhoto": "AnetCO2",
     "!StomCond": "StomCond",
     "!CO2i": "CO2i",
     "!Ci": "CO2i",
@@ -232,6 +240,9 @@ MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
     "!AirPress": "AirPress",
     "AirPres": "AirPress",
     "Patm": "AirPress",
+    "Press": "AirPress",
+    "Area": "LeafAreaMeasured",
+    "PhiPS2": "PhiPSII",
     "!FoorFs'": "FoOrFsp",
     "!FmorFm'": "FmOrFmp",
     # PAM fluorometry variants

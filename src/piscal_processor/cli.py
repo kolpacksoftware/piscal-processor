@@ -14,6 +14,7 @@ from piscal_processor.converter import (
     parse_curve_file_json,
 )
 from piscal_processor.export import export_curves
+from piscal_processor.legacy import LegacyConversionError, write_legacy_input
 from piscal_processor.storage import get_backend
 from piscal_processor.validation import validate_piscal_csv
 
@@ -241,3 +242,52 @@ def parse_file_main() -> None:
             f.write(payload + "\n")
     else:
         sys.stdout.write(payload + "\n")
+
+
+def _parse_to_legacy_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Rewrite a PISCAL/Leafweb CSV into the legacy Licor layout "
+            "expected by the Fortran binary (21/7/38 column blocks)."
+        )
+    )
+    parser.add_argument(
+        "file",
+        type=str,
+        help="Path to a single PISCAL CSV file (local path or s3a:// URI).",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        required=True,
+        help="Destination path for the legacy-format CSV.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Rewrite even when the source already looks like legacy layout. "
+            "Columns with no slot in the legacy schema are dropped; the report "
+            "lists them."
+        ),
+    )
+    return parser.parse_args()
+
+
+def to_legacy_main() -> None:
+    """CLI entry: rewrite one CSV into the Fortran Licor layout."""
+    args = _parse_to_legacy_args()
+    try:
+        report = write_legacy_input(args.file, args.output, force=args.force)
+    except LegacyConversionError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:  # noqa: BLE001 - surface any parse failure
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    status = "converted" if report.converted else "copied"
+    print(f"{status}: {args.file} -> {args.output} ({report.data_rows} data rows)")
+    for note in report.notes:
+        print(f"note: {note}")

@@ -142,8 +142,12 @@ def test_parse_file_main_ok(monkeypatch, capsys, caplog):
 
     # stdout must stay pipeable: exactly one JSON document, no diagnostics mixed in.
     assert captured.out.count("\n") == 1
+    # Legacy !AdjPhoto / Press aliases populate the required Leafweb columns.
+    first = data["measurements"][0]
+    assert first["AnetCO2"] is not None
+    assert first["AirPress"] is not None
     warning = "required measurement columns"
-    assert any(warning in record.getMessage() for record in caplog.records)
+    assert not any(warning in record.getMessage() for record in caplog.records)
     assert warning not in captured.out
 
 

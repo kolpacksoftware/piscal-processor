@@ -11,9 +11,10 @@ from __future__ import annotations
 import io
 import os
 from pathlib import Path
-from typing import Protocol, Union
+from typing import TYPE_CHECKING, Any, Protocol, Union
 
-import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class StorageBackend(Protocol):
@@ -33,11 +34,11 @@ class StorageBackend(Protocol):
         """Read file content as text, with optional encoding fallback."""
         ...
 
-    def read_parquet(self, uri: Union[str, Path]) -> pd.DataFrame:
+    def read_parquet(self, uri: Union[str, Path]) -> Any:
         """Read a Parquet file into a DataFrame."""
         ...
 
-    def write_parquet(self, df: pd.DataFrame, uri: Union[str, Path]) -> None:
+    def write_parquet(self, df: Any, uri: Union[str, Path]) -> None:
         """Write a DataFrame to Parquet format."""
         ...
 
@@ -84,14 +85,17 @@ class FilesystemBackend:
                 raise
             return path.read_text(encoding=fallback_encoding)
 
-    def read_parquet(self, uri: Union[str, Path]) -> pd.DataFrame:
+    def read_parquet(self, uri: Union[str, Path]) -> Any:
+        import pandas as pd
+
         return pd.read_parquet(uri)
 
-    def write_parquet(self, df: pd.DataFrame, uri: Union[str, Path]) -> None:
+    def write_parquet(self, df: Any, uri: Union[str, Path]) -> None:
         df.to_parquet(uri, index=False)
 
     def write_text(self, uri: Union[str, Path], content: str) -> None:
-        Path(uri).write_text(content)
+        # Encoding is pinned so output does not depend on the machine's locale.
+        Path(uri).write_text(content, encoding="utf-8")
 
     def exists(self, uri: Union[str, Path]) -> bool:
         return Path(uri).exists()
@@ -181,13 +185,15 @@ class S3Backend:
             with fs.open(path, "r", encoding=fallback_encoding) as f:
                 return f.read()
 
-    def read_parquet(self, uri: Union[str, Path]) -> pd.DataFrame:
+    def read_parquet(self, uri: Union[str, Path]) -> Any:
+        import pandas as pd
+
         fs = self._get_fs()
         path = self._norm_uri(uri)
         with fs.open(path, "rb") as f:
             return pd.read_parquet(f)
 
-    def write_parquet(self, df: pd.DataFrame, uri: Union[str, Path]) -> None:
+    def write_parquet(self, df: Any, uri: Union[str, Path]) -> None:
         fs = self._get_fs()
         path = self._norm_uri(uri)
         self.ensure_output_parent(uri)
@@ -200,7 +206,7 @@ class S3Backend:
     def write_text(self, uri: Union[str, Path], content: str) -> None:
         fs = self._get_fs()
         path = self._norm_uri(uri)
-        with fs.open(path, "w") as f:
+        with fs.open(path, "w", encoding="utf-8") as f:
             f.write(content)
 
     def exists(self, uri: Union[str, Path]) -> bool:

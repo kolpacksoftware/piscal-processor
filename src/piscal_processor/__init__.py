@@ -9,7 +9,7 @@ Use as a library:
 CLI: piscal-processor (convert), piscal-processor-export (export to CSV/TSV).
 """
 
-from piscal_processor.converter import convert_curves, parse_curve_file
+from piscal_processor.converter import convert_curves, parse_curve_file, parse_curve_file_json
 from piscal_processor.export import export_curves, extract_columns
 from piscal_processor.parser import (
     next_nonempty,
@@ -32,6 +32,7 @@ from piscal_processor.validation import is_piscal_csv, validate_piscal_csv
 __all__ = [
     "convert_curves",
     "parse_curve_file",
+    "parse_curve_file_json",
     "export_curves",
     "extract_columns",
     "get_backend",

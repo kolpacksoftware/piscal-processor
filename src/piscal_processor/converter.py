@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 import pandas as pd
 
@@ -195,6 +195,66 @@ def parse_curve_file(uri: str, backend: StorageBackend) -> Tuple[Dict[str, objec
     }
 
     return metadata_row, measurements_df
+
+
+def _json_safe_scalar(value: object) -> Any:
+    """Convert pandas/numpy missing values to None; leave other scalars as-is."""
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    # numpy / pandas scalars -> plain Python
+    if hasattr(value, "item"):
+        try:
+            return value.item()
+        except (ValueError, AttributeError):
+            pass
+    return value
+
+
+def parse_curve_file_json(
+    uri: str,
+    backend: StorageBackend,
+    *,
+    source_pathway: str | None = None,
+) -> dict:
+    """Parse one PISCAL CSV into a JSON-safe {"metadata": {...}, "measurements": [...]} dict.
+
+    Applies METADATA_COLUMN_ALIASES and reindexes to STANDARD_* columns (the same
+    normalization the Parquet path performs), then replaces NaN/NA/NaT with None.
+    """
+    metadata_row, measurements_df = parse_curve_file(uri, backend)
+
+    # Alias + reindex metadata (mirrors normalize_and_write_parquet).
+    for alias, canonical in METADATA_COLUMN_ALIASES.items():
+        if alias in metadata_row and canonical not in metadata_row:
+            metadata_row[canonical] = metadata_row.pop(alias)
+        elif alias in metadata_row:
+            # Prefer canonical if both present; drop the alias key.
+            metadata_row.pop(alias)
+
+    if source_pathway is not None:
+        metadata_row["pathway_subtype"] = source_pathway
+        measurements_df = measurements_df.copy()
+        measurements_df["pathway_subtype"] = source_pathway
+
+    metadata: Dict[str, Any] = {
+        col: _json_safe_scalar(metadata_row.get(col)) for col in STANDARD_METADATA_COLUMNS
+    }
+
+    measurements_df = measurements_df.reindex(columns=STANDARD_MEASUREMENT_COLUMNS)
+    # Replace missing with None for JSON serialization.
+    records = measurements_df.astype(object).where(pd.notnull(measurements_df), None).to_dict(
+        orient="records"
+    )
+    measurements: List[Dict[str, Any]] = [
+        {k: _json_safe_scalar(v) for k, v in row.items()} for row in records
+    ]
+
+    return {"metadata": metadata, "measurements": measurements}
 
 
 def convert_curves(

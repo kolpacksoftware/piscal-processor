@@ -56,6 +56,14 @@ piscal-processor-export curve_measurements.parquet -o out.tsv --format tsv --col
 piscal-processor-check-format tests/fixtures/sampleinput.csv
 ```
 
+**Parse one file to JSON** (metadata object + measurements array on stdout):
+
+```bash
+piscal-processor-parse-file tests/fixtures/sampleinput.csv --source-pathway C3_photosynthesis_leafweb
+# or write to a file:
+piscal-processor-parse-file tests/fixtures/sampleinput.csv -o out.json
+```
+
 ## Library
 
 ```python
@@ -64,6 +72,7 @@ from piscal_processor import (
     export_curves,
     get_backend,
     is_piscal_csv,
+    parse_curve_file_json,
 )
 
 # Convert CSVs to DataFrames (or write Parquet via converter.normalize_and_write_parquet)
@@ -76,6 +85,11 @@ export_curves(meas_df, "out.tsv", columns=["curve_id", "AnetCO2", "PARi"], forma
 # Quickly validate that a single CSV file looks like a PISCAL/Leafweb curve file
 ok = is_piscal_csv("/path/to/file.csv")
 print(ok)
+
+# Parse one file to a JSON-safe dict (metadata + measurements)
+result = parse_curve_file_json(
+    "/path/to/file.csv", get_backend("/path/to/file.csv"), source_pathway="C3"
+)
 ```
 
 Schema constants and parser helpers are also available:

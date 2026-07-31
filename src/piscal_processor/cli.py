@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from piscal_processor.converter import (
     _pathway_subdirs_from_csv_paths,
     convert_curves,
     normalize_and_write_parquet,
+    parse_curve_file_json,
 )
 from piscal_processor.export import export_curves
 from piscal_processor.storage import get_backend
@@ -190,3 +192,52 @@ def check_format_main() -> None:
             print(f"{path}: NOT PISCAL - {reason}")
 
     sys.exit(1 if any_failed else 0)
+
+
+def _parse_parse_file_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Parse one PISCAL/Leafweb CSV into JSON "
+            "(metadata object + measurements array) on stdout."
+        )
+    )
+    parser.add_argument(
+        "file",
+        type=str,
+        help="Path to a single PISCAL CSV file (local path or s3a:// URI).",
+    )
+    parser.add_argument(
+        "--source-pathway",
+        type=str,
+        default=None,
+        help="Optional pathway_subtype label (e.g. C3_photosynthesis_leafweb).",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=None,
+        help="Write JSON to this path instead of stdout.",
+    )
+    return parser.parse_args()
+
+
+def parse_file_main() -> None:
+    """CLI entry: parse one CSV file and emit JSON metadata + measurements."""
+    args = _parse_parse_file_args()
+    try:
+        backend = get_backend(args.file)
+        result = parse_curve_file_json(
+            args.file, backend, source_pathway=args.source_pathway
+        )
+    except Exception as exc:  # noqa: BLE001 - surface any parse failure to the caller
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(result, f, allow_nan=False)
+            f.write("\n")
+    else:
+        json.dump(result, sys.stdout, allow_nan=False)
+        sys.stdout.write("\n")

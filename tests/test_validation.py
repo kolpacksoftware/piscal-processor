@@ -62,3 +62,19 @@ def test_validate_piscal_csv_rejects_missing_param_block(tmp_path: Path):
     # Should fail specifically due to parameter triplet missing/malformed
     assert any("parameter triplet" in e.lower() or "parameter" in e.lower() for e in errors)
 
+
+def test_validate_accepts_gfs_cornell_param_headers():
+    assert is_piscal_csv(_fixture("real_gfs_cornell.csv"))
+
+
+def test_validate_accepts_latin1_file():
+    path = _fixture("real_latin1.csv")
+    ok, errors = validate_piscal_csv(path)
+    assert ok, errors
+
+
+def test_validate_rejects_shifted_triplet():
+    ok, errors = validate_piscal_csv(_fixture("real_shifted_triplet.csv"))
+    assert not ok
+    assert errors
+

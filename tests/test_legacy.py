@@ -86,7 +86,7 @@ def test_write_legacy_round_trip_required_columns(tmp_path: Path):
     out_meta, out_meas = parse_curve_file(str(dest), backend)
 
     assert out_meta["SpeciesSampled"] == src_meta["SpeciesSampled"]
-    # parse_curve_file keeps the on-disk header; legacy emits Latitude(Degrees).
+    # parse_curve_file aliases Latitude(Degrees) onto Latitude; legacy still emits the on-disk name.
     src_lat = src_meta.get("Latitude", src_meta.get("Latitude(Degrees)"))
     out_lat = out_meta.get("Latitude", out_meta.get("Latitude(Degrees)"))
     assert float(out_lat) == pytest.approx(float(src_lat))

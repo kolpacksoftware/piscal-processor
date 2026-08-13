@@ -164,6 +164,14 @@ METADATA_COLUMN_ALIASES: Dict[str, str] = {
     "param_gi": "param_ResistWP25",
     "param_Resistwpbs25": "param_ResistWP25",
     "param_Resistchm25": "param_ResistCH25",
+    # GFS-3000 / Cornell LeafWeb.org parameter triplet
+    "param_Gamma*_25oC": "param_Gamma",
+    "param_Kc_25oC": "param_Kc25",
+    "param_Ko_25oC": "param_Ko25",
+    "param_Alpha_25oC": "param_AlphaTPU",
+    "param_Rd_25oC": "param_Rd25",
+    "param_rwp_25oC": "param_ResistWP25",
+    "param_rch_25oC": "param_ResistCH25",
 }
 
 # ---------------------------------------------------------------------------
@@ -242,6 +250,7 @@ MEASUREMENT_COLUMN_ALIASES: Dict[str, str] = {
     "Patm": "AirPress",
     "Press": "AirPress",
     "Area": "LeafAreaMeasured",
+    "ChamberArea": "LeafAreaMeasured",
     "PhiPS2": "PhiPSII",
     "!FoorFs'": "FoOrFsp",
     "!FmorFm'": "FmOrFmp",

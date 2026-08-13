@@ -12,9 +12,11 @@
    - Line 15: Parameter labels following the Leafweb standard: `Gamma*25`, `KC25`, `KO25`, `AlphaTPU`, `Rd25`, `Resistwpbs25`, `Resistchm25`.
    - Line 16: Units row (Pa, µmol m⁻² s⁻¹, µmol⁻¹ m² s Pa, etc.).
    - Line 17: Numeric overrides at 25 °C; `-9999` means “use Leafweb defaults / fit from data”.
-   - Legacy parameter names from PISCAL (`Gamma`, `Kc25`, `Ko25`, and scalar `gi`) are still accepted; on ingest they are mapped into the new resistance parameters, and the single `gi` field is not retained as a separate column in the normalized schema.
+   - Legacy parameter names from PISCAL (`Gamma`, `Kc`/`Kc25`, `Ko`/`Ko25`, `Alpha`, `Rd`, and scalar `gi`) are still accepted; on ingest they are mapped into the new resistance parameters, and the single `gi` field is not retained as a separate column in the normalized schema.
+   - GFS-3000 / Cornell LeafWeb.org names (`Gamma*_25oC`, `Kc_25oC`, `Ko_25oC`, `Alpha_25oC`, `Rd_25oC`, `rwp_25oC`, `rch_25oC`) are accepted by the validator and mapped onto the same canonical `param_*` keys.
 4. **Measurement table (line 18 onward)**
-   - Line 18: Column names for control/timing, gas exchange, PAM fluorometry, and VOC data. Typical headers include `DataType`, `ObsNo` (legacy `Obs`), `ObsDate`, `HHMMSS`, `!AnetCO2`, `AnetO2`, `AnetVOC`, `!StomCond`, `!CO2i` (legacy `!Ci`), `!Trmmol`, `!VpdL`, `LeafAreaMeasured`, `StmRat`, `BLCond`, `Tair`, `!Tleaf`, `TBlk`, `CO2R`, `CO2S`, `H2OR`, `H2OS`, `RH_R`, `RH_S`, `MainFlowRate` (legacy `Flow`), `!PARi`, `PARo`, `!AirPress`, `OxygenLevel%`, `TissueArea`, `TissueMass`, `PARi@Fs`, `!FoorFs'`, `!FmorFm'`, `FoDark`, `FmDark`, `PamFo'`, `VOCR`, `VOCS`.
+   - Line 18: Column names for control/timing, gas exchange, PAM fluorometry, and VOC data. Typical headers include `DataType`, `ObsNo` (legacy `Obs`), `ObsDate`, `HHMMSS`, `!AnetCO2`, `AnetO2`, `AnetVOC`, `!StomCond`, `!CO2i` (legacy `!Ci`), `!Trmmol`, `!VpdL`, `LeafAreaMeasured` (legacy `Area`, GFS `ChamberArea`), `StmRat`, `BLCond`, `Tair`, `!Tleaf`, `TBlk`, `CO2R`, `CO2S`, `H2OR`, `H2OS`, `RH_R`, `RH_S`, `MainFlowRate` (legacy `Flow`), `!PARi`, `PARo`, `!AirPress`, `OxygenLevel%`, `TissueArea`, `TissueMass`, `PARi@Fs`, `!FoorFs'`, `!FmorFm'`, `FoDark`, `FmDark`, `PamFo'`, `VOCR`, `VOCS`.
+   - When `!AdjPhoto` is missing or `-9999` but `Photo` is populated, ingest fills `AnetCO2` from `Photo` and keeps `Photo` as its own column. Real AdjPhoto-derived `AnetCO2` is not overwritten.
    - Line 19: Units row (µmol m⁻² s⁻¹, µmol mol⁻¹, kPa, °C, %, ppb, etc.).
    - Lines 20+: Observations sorted by `HHMMSS`. Variables starting with `!` in the Leafweb specification are required for Leafweb analyses; this library accepts files with missing or `-9999` values for these columns but will emit warnings when they are absent or entirely empty.
 
@@ -29,5 +31,6 @@
 
 The `piscal-processor` library includes a lightweight validator (`is_piscal_csv` /
 `validate_piscal_csv`) that uses this structure as its reference when deciding if a
-CSV file appears to be in PISCAL/Leafweb format. Both legacy PISCAL headers and
-Leafweb-standard headers are accepted.
+CSV file appears to be in PISCAL/Leafweb format. Legacy PISCAL headers, Leafweb-standard
+headers, and GFS-3000 / Cornell parameter names are accepted. Path reads use utf-8
+and fall back to iso-8859-1, matching `FilesystemBackend.read_text`.

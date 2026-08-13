@@ -99,6 +99,26 @@ def pad_row(row: List[str], target_len: int) -> List[str]:
     return row
 
 
+def _apply_metadata_column_aliases(metadata_row: Dict[str, object]) -> Dict[str, object]:
+    """Rename alias keys onto canonical metadata names. Canonical wins if both exist."""
+    for alias, canonical in METADATA_COLUMN_ALIASES.items():
+        if alias in metadata_row and canonical not in metadata_row:
+            metadata_row[canonical] = metadata_row.pop(alias)
+        elif alias in metadata_row:
+            metadata_row.pop(alias)
+    return metadata_row
+
+
+def _fill_anetco2_from_photo(measurements_df: pd.DataFrame) -> None:
+    """Fill missing AnetCO2 from Photo without overwriting real AdjPhoto-derived values."""
+    if "Photo" not in measurements_df.columns:
+        return
+    if "AnetCO2" not in measurements_df.columns:
+        measurements_df["AnetCO2"] = measurements_df["Photo"]
+        return
+    measurements_df["AnetCO2"] = measurements_df["AnetCO2"].fillna(measurements_df["Photo"])
+
+
 def coerce_numeric_columns(df: pd.DataFrame, skip: set[str] | None = None) -> pd.DataFrame:
     """Convert string columns to numeric when they contain numeric data."""
     skip = skip or set()
@@ -181,6 +201,7 @@ def parse_curve_file(uri: str, backend: StorageBackend) -> Tuple[Dict[str, objec
         measurements_df,
         skip={"HHMMSS", "curve_id", "SpeciesSampled", "Major_species", "Photosynthetic_pathway", "DataType", "ObsDate"},
     )
+    _fill_anetco2_from_photo(measurements_df)
 
     for col in OPTIONAL_MEASUREMENT_COLUMNS:
         if col not in measurements_df.columns:
@@ -201,6 +222,7 @@ def parse_curve_file(uri: str, backend: StorageBackend) -> Tuple[Dict[str, objec
             {key.replace("param_", ""): unit.strip() for key, unit in zip(param_headers, param_units)}
         ),
     }
+    _apply_metadata_column_aliases(metadata_row)
 
     return metadata_row, measurements_df
 
@@ -252,22 +274,16 @@ def parse_curve_file_json(
 ) -> dict:
     """Parse one PISCAL CSV into a JSON-safe {"metadata": {...}, "measurements": [...]} dict.
 
-    Applies METADATA_COLUMN_ALIASES, reindexes to STANDARD_* columns, and replaces
-    NaN/NA/NaT/inf with None.
+    Applies METADATA_COLUMN_ALIASES (also applied in parse_curve_file), reindexes to
+    STANDARD_* columns, and replaces NaN/NA/NaT/inf with None.
 
     Every column is emitted with its schema-declared type, so a field's JSON type
     never depends on which file it came from: numeric columns are floats and string
     columns are strings, matching the dtypes the Parquet path writes.
     """
     metadata_row, measurements_df = parse_curve_file(uri, backend)
-
-    # Alias + reindex metadata (mirrors normalize_and_write_parquet).
-    for alias, canonical in METADATA_COLUMN_ALIASES.items():
-        if alias in metadata_row and canonical not in metadata_row:
-            metadata_row[canonical] = metadata_row.pop(alias)
-        elif alias in metadata_row:
-            # Prefer canonical if both present; drop the alias key.
-            metadata_row.pop(alias)
+    # Aliases are applied in parse_curve_file; re-run is idempotent.
+    _apply_metadata_column_aliases(metadata_row)
 
     if source_pathway is not None:
         metadata_row["pathway_subtype"] = source_pathway

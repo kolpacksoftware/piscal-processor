@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. This project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.1
+
+### Changed
+
+- `validate_piscal_csv` accepts GFS-3000 / Cornell parameter headers
+  (`Gamma*_25oC`, `Kc_25oC`, `Ko_25oC`, `Alpha_25oC`, `Rd_25oC`, `rwp_25oC`,
+  `rch_25oC`) alongside the existing legacy and Leafweb names. Classic `Gamma*`
+  files still match via `Kc`/`Ko`/`Alpha`/`Rd`/`gi`.
+- `validate_piscal_csv` reads files with the same utf-8 then iso-8859-1 fallback
+  as `FilesystemBackend.read_text`, so latin-1 LeafWeb.org CSVs no longer raise
+  `UnicodeDecodeError` before parse.
+- `parse_curve_file` applies `METADATA_COLUMN_ALIASES` the same way
+  `parse_curve_file_json` does (canonical wins if both keys are present), so
+  `Latitude(Degrees)` and `param_Gamma*` land on `Latitude` and `param_Gamma`.
+- GFS/Cornell param names alias onto the canonical `param_*` keys.
+- `ChamberArea` aliases onto `LeafAreaMeasured`.
+- After measurement aliasing and numeric coerce, missing `AnetCO2` is filled
+  from `Photo` without overwriting real AdjPhoto-derived values. `Photo` stays
+  its own column. The legacy emitter still writes Photo and `!AdjPhoto` as
+  distinct fields.
+
 ## 0.2.0
 
 ### Added

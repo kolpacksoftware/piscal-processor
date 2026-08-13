@@ -18,6 +18,7 @@ from piscal_processor.parser import (
     parse_triplet,
 )
 from piscal_processor.schema import MEASUREMENT_COLUMN_ALIASES
+from piscal_processor.storage import FilesystemBackend
 
 
 StrOrPath = Union[str, Path]
@@ -26,8 +27,8 @@ StrOrPath = Union[str, Path]
 def _read_lines(path_or_buffer: Union[StrOrPath, IO[str]]) -> List[str]:
     """Read text lines from a filesystem path or a text-mode file object."""
     if isinstance(path_or_buffer, (str, Path)):
-        with open(path_or_buffer, "r", encoding="utf-8") as f:  # type: ignore[arg-type]
-            return f.read().splitlines()
+        # Same utf-8 then iso-8859-1 fallback as FilesystemBackend.read_text.
+        return FilesystemBackend().read_text(path_or_buffer).splitlines()
     # Assume file-like object already opened in text mode
     text = path_or_buffer.read()
     return text.splitlines()
@@ -119,7 +120,22 @@ def validate_piscal_csv(
         "Resistwpbs25",
         "Resistchm25",
     }
-    if not (param_headers_norm.intersection(legacy_params) or param_headers_norm.intersection(leafweb_params)):
+    # GFS-3000 / Cornell LeafWeb.org headers. Classic Gamma* (asterisk) still
+    # matches via Kc/Ko/Alpha/Rd/gi; do not add Gamma* as its own token.
+    gfs_cornell_params = {
+        "Gamma*_25oC",
+        "Kc_25oC",
+        "Ko_25oC",
+        "Alpha_25oC",
+        "Rd_25oC",
+        "rwp_25oC",
+        "rch_25oC",
+    }
+    if not (
+        param_headers_norm.intersection(legacy_params)
+        or param_headers_norm.intersection(leafweb_params)
+        or param_headers_norm.intersection(gfs_cornell_params)
+    ):
         errors.append("Parameter header row missing legacy or Leafweb parameter names")
         return False, errors
 

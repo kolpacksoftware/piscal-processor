@@ -1,6 +1,6 @@
-"""Edge cases taken from the real Leafweb corpus (StandardDataForAI).
+"""Edge cases taken from the real Leafweb corpus.
 
-Each fixture here is an unmodified file from the archive, kept because it exercises
+Each fixture here is an unmodified file from an archive, kept because it exercises
 something the synthetic fixtures do not:
 
   real_quoted_headers.csv   descriptive header lines wrapped in CSV quotes because
@@ -10,6 +10,10 @@ something the synthetic fixtures do not:
                             plus values written with a leading period (".301")
   real_unnamed_columns.csv  trailing commas in the measurement header, which produce
                             several unnamed columns
+  real_gfs_cornell.csv      LeafWeb.org GFS-3000 / Cornell param headers and ChamberArea
+  real_photo_fill.csv       LeafWeb.org file with Photo filled and !AdjPhoto all -9999
+  real_latin1.csv           LeafWeb.org classic layout that is not utf-8
+  real_shifted_triplet.csv  LeafWeb.org file whose site/param/measurement blocks are shifted
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ import pytest
 from piscal_processor.converter import (
     convert_curves,
     normalize_and_write_parquet,
+    parse_curve_file,
     parse_curve_file_json,
 )
 from piscal_processor.schema import (
@@ -34,6 +39,7 @@ from piscal_processor.schema import (
     STRING_METADATA_COLUMNS,
 )
 from piscal_processor.storage import FilesystemBackend
+from piscal_processor.validation import validate_piscal_csv
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -179,3 +185,53 @@ def test_parquet_keeps_categorical_wood_porosity(tmp_path: Path):
 
     written = pd.read_parquet(output / "curve_metadata.parquet")
     assert written["WoodPorosity"].iloc[0] == "ring porous"
+
+
+def test_gfs_cornell_org_file_validates_and_parses():
+    path = FIXTURES / "real_gfs_cornell.csv"
+    ok, errors = validate_piscal_csv(path)
+    assert ok, errors
+
+    meta, meas = parse_curve_file(str(path), FilesystemBackend())
+    assert meta["param_Gamma"] == pytest.approx(37.4)
+    assert meta["param_Rd25"] == pytest.approx(0.45)
+    assert "param_Gamma*_25oC" not in meta
+    assert "LeafAreaMeasured" in meas.columns
+    assert "ChamberArea" not in meas.columns
+    assert "AnetCO2" in meas.columns
+    assert meas["AnetCO2"].notna().any()
+    assert len(meas) >= 1
+
+
+def test_photo_fill_org_file_fills_anetco2_and_aliases_latitude():
+    path = FIXTURES / "real_photo_fill.csv"
+    ok, errors = validate_piscal_csv(path)
+    assert ok, errors
+
+    meta, meas = parse_curve_file(str(path), FilesystemBackend())
+    assert meta["Latitude"] == pytest.approx(38.643333)
+    assert "Latitude(Degrees)" not in meta
+    assert "Photo" in meas.columns
+    assert meas["AnetCO2"].notna().all()
+    pd.testing.assert_series_equal(
+        meas["AnetCO2"], meas["Photo"], check_names=False, check_dtype=False
+    )
+
+
+def test_latin1_org_file_validates_and_parses():
+    path = FIXTURES / "real_latin1.csv"
+    ok, errors = validate_piscal_csv(path)
+    assert ok, errors
+
+    meta, meas = parse_curve_file(str(path), FilesystemBackend())
+    assert meta["Latitude"] == 56
+    assert "Latitude(Degrees)" not in meta
+    assert meta["Site name in full"] == "Linneaus university. Växjö. Sweden"
+    assert len(meas) >= 1
+    assert meas["AnetCO2"].notna().any()
+
+
+def test_shifted_triplet_org_file_fails_validate():
+    ok, errors = validate_piscal_csv(FIXTURES / "real_shifted_triplet.csv")
+    assert not ok
+    assert errors

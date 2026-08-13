@@ -78,6 +78,13 @@ def test_parse_curve_file_sampleinput_leafweb():
     assert len(meas) >= 10
     # Aliases map !StomCond, !PARi, !Tleaf etc. to standard names
     assert "StomCond" in meas.columns or "PARi" in meas.columns
+    # Org-site Latitude(Degrees) is canonicalized in parse_curve_file.
+    assert meta["Latitude"] == 38.733
+    assert "Latitude(Degrees)" not in meta
+    # Photo and !AdjPhoto are both real; AnetCO2 stays AdjPhoto, Photo stays its own column.
+    assert "Photo" in meas.columns
+    assert meas["Photo"].iloc[0] == pytest.approx(7.51)
+    assert meas["AnetCO2"].iloc[0] == pytest.approx(7.470041223)
 
 
 def test_parse_curve_file_leafweb_updated_headers():
@@ -247,3 +254,49 @@ def test_required_airpress_warning_when_all_airpress_aliases_absent(caplog, tmp_
     messages = " ".join(record.getMessage() for record in caplog.records)
     assert "Leafweb required measurement columns are missing or empty for one or more curves" in messages
     assert "AirPress" in messages
+
+
+def test_gfs_cornell_param_headers_alias_to_canonical(tmp_path: Path):
+    """All seven GFS/Cornell param names land on the standard metadata keys."""
+    fixtures = Path(__file__).parent / "fixtures"
+    source = fixtures / "sampleinput.csv"
+    if not source.exists():
+        pytest.skip("fixture sampleinput.csv not found")
+
+    lines = source.read_text(encoding="utf-8").splitlines()
+    param_idx = next(i for i, line in enumerate(lines) if line.startswith("Gamma*"))
+    lines[param_idx] = "Gamma*_25oC,Kc_25oC,Ko_25oC,Alpha_25oC,Rd_25oC,rwp_25oC,rch_25oC"
+    lines[param_idx + 1] = "Pa,Pa,Pa,NoUnit,umol/m2/s,umol-1m2sPa,umol-1m2sPa"
+    lines[param_idx + 2] = "41,42,43,44,45,46,47"
+
+    out = tmp_path / "gfs_params.csv"
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    meta, _meas = parse_curve_file(str(out), FilesystemBackend())
+
+    assert meta["param_Gamma"] == 41
+    assert meta["param_Kc25"] == 42
+    assert meta["param_Ko25"] == 43
+    assert meta["param_AlphaTPU"] == 44
+    assert meta["param_Rd25"] == 45
+    assert meta["param_ResistWP25"] == 46
+    assert meta["param_ResistCH25"] == 47
+    assert "param_Gamma*_25oC" not in meta
+    assert "param_Kc_25oC" not in meta
+
+
+def test_chamber_area_aliases_to_leaf_area_measured(tmp_path: Path):
+    fixtures = Path(__file__).parent / "fixtures"
+    source = fixtures / "sampleinput.csv"
+    if not source.exists():
+        pytest.skip("fixture sampleinput.csv not found")
+
+    lines = source.read_text(encoding="utf-8").splitlines()
+    header_idx = next(i for i, line in enumerate(lines) if line.startswith("Obs,"))
+    lines[header_idx] = lines[header_idx].replace(",Area,", ",ChamberArea,")
+    out = tmp_path / "chamber_area.csv"
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    _meta, meas = parse_curve_file(str(out), FilesystemBackend())
+    assert "LeafAreaMeasured" in meas.columns
+    assert "ChamberArea" not in meas.columns
+    assert meas["LeafAreaMeasured"].iloc[0] == 2
